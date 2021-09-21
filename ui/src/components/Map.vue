@@ -42,13 +42,6 @@
         <img src="@/assets/settings.svg" />
       </button>
 
-      <button
-        class="settingsBtn settingsBtnMarginLeft"
-        v-on:click="onAccountSettings"
-      >
-        <img src="@/assets/user.svg" />
-      </button>
-
       <button class="settingsBtn" v-on:click="centerCurrentLocation()">
         <img src="@/assets/crosshair.svg" />
       </button>
@@ -222,7 +215,6 @@ export default {
   },
   props: {
     isBlured: String,
-    onAccountSettings: Function,
     onSettings: Function,
     onMinimize: Function
   },
@@ -1380,12 +1372,11 @@ $popup-background: var(--background-color);
 
 .buttonsPanelTopRight {
   @extend .buttonsPanelTopBase;
-  left: 100%;
-  margin-left: -166px;
+  right: 22px;
 }
 
 .buttonsPanelTopRightNoFrameWindow {
-  margin-left: -250px;
+  right: 105px;
 }
 
 .buttonsPanelTopLeft {

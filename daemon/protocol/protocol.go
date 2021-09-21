@@ -904,6 +904,9 @@ func (p *Protocol) processRequest(conn net.Conn, message string) {
 						}
 					case vpn.EXITING:
 						disconnectAuthError = state.IsAuthError
+					case vpn.DISCONNECTED:
+						// Do not send types.VpnStateResp(DISCONNECTED).
+						// We using special notification 'types.DisconnectedResp' for the case when VPN fully stopped
 					default:
 						p.notifyClients(&types.VpnStateResp{StateVal: state.State, State: state.State.String(), StateAdditionalInfo: state.StateAdditionalInfo})
 					}

@@ -70,6 +70,8 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 let win;
 let settingsWindow;
 let updateWindow;
+let macOSDaemonInstallRequiredWindow;
+
 let isAppReadyToQuit = false;
 
 let isTrayInitialized = false;
@@ -106,9 +108,16 @@ ipcMain.on("renderer-request-show-settings-networks", () => {
 ipcMain.handle("renderer-request-connect-to-daemon", async () => {
   return await connectToDaemon();
 });
-ipcMain.handle("renderer-request-update-wnd-close", async () => {
-  if (!updateWindow) return;
-  updateWindow.destroy();
+ipcMain.handle("renderer-request-wnd-close", async (evt, windowName) => {
+  switch (windowName) {
+    case "updateWindow":
+      if (updateWindow) updateWindow.destroy();
+      break;
+    case "macOSDaemonInstallRequiredWindow":
+      if (macOSDaemonInstallRequiredWindow)
+        macOSDaemonInstallRequiredWindow.destroy();
+      break;
+  }
 });
 
 ipcMain.handle(
@@ -125,7 +134,6 @@ if (gotTheLock) {
   InitPersistentSettings();
   InitConnectionResumer();
   InitTrustedNetworks();
-  connectToDaemon();
 
   // INIT COLOR SCHEME
   try {
@@ -287,6 +295,9 @@ if (gotTheLock) {
         console.error("Failed to open dev tools:", e.toString());
       }
     }
+
+    // CONNECT TO DAEMON only when application fully started (main window is created)
+    connectToDaemon();
   });
 
   app.on("activate", () => {
@@ -735,19 +746,109 @@ function closeUpdateWindow() {
   updateWindow.destroy(); // close();
 }
 
+// macOS DAEMON INSTALL REQUIRED
+function createMacOSDaemonInstallDlgWindow() {
+  if (macOSDaemonInstallRequiredWindow != null) {
+    macOSDaemonInstallRequiredWindow.destroy();
+  }
+
+  menuOnShow();
+
+  let windowConfig = {
+    backgroundColor: getBackgroundColor(),
+    show: false,
+
+    width: config.UpdateWindowWidth,
+    height: 260,
+    maxWidth: config.UpdateWindowWidth,
+    maxHeight: 600,
+
+    resizable: false,
+    fullscreenable: false,
+    maximizable: false,
+    minimizable: false,
+
+    center: true,
+
+    autoHideMenuBar: true,
+
+    modal: true,
+    alwaysOnTop: true,
+    parent: win
+  };
+
+  macOSDaemonInstallRequiredWindow = createBrowserWindow(windowConfig);
+
+  if (process.env.WEBPACK_DEV_SERVER_URL) {
+    // Load the url of the dev server if in development mode
+    macOSDaemonInstallRequiredWindow.loadURL(
+      process.env.WEBPACK_DEV_SERVER_URL + `/#/macOSDaemonInstallRequiredDlg`
+    );
+  } else {
+    createProtocol("app");
+    // Load the index.html when not in development
+    macOSDaemonInstallRequiredWindow.loadURL(
+      "app://./index.html" + `/#/macOSDaemonInstallRequiredDlg`
+    );
+  }
+
+  macOSDaemonInstallRequiredWindow.once("ready-to-show", () => {
+    macOSDaemonInstallRequiredWindow.show();
+  });
+}
+
 // INITIALIZE CONNECTION TO A DAEMON
 async function connectToDaemon(
   doNotTryToInstall,
   isCanRetry,
-  doNotTryToMacosStart
+  doNotTryToMacosStart,
+  isDoNotNotifyUserFirstInstall
 ) {
-  // MACOS ONLY: install daemon (privileged helper) if required
+  // ================================================================
+  // (begin) MACOS ONLY: install daemon (privileged helper) if required
   if (Platform() === PlatformEnum.macOS && doNotTryToInstall !== true) {
+    // If it is a clean install (no demon installed) - show dialog to a user
+    // with a description why the daemon installation is necessary
+    let onBeforeCleanInstall = function() {
+      // If this event called - the InstallDaemonIfRequired() fully stopped.
+      // Necessary to call InstallDaemonIfRequired with empty value of 'onBeforeInstall' parameter
+      try {
+        // Show dialog with description of daemon installation
+        store.commit("daemonIsInstalling", true);
+        createMacOSDaemonInstallDlgWindow();
+
+        // Waiting to close dialog (user must press Ok or Cancel: store.state.daemonAllowedToInstallMacOS)
+        macOSDaemonInstallRequiredWindow.on("closed", () => {
+          macOSDaemonInstallRequiredWindow = null;
+
+          if (store.state.daemonAllowedToInstallMacOS == false) {
+            store.commit("daemonIsInstalling", false);
+            // Skip connection to daemon
+            return;
+          }
+
+          connectToDaemon(
+            false, //doNotTryToInstall
+            isCanRetry,
+            doNotTryToMacosStart,
+            true // DoNotNotifyUserFirstInstall
+          );
+        });
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    if (isDoNotNotifyUserFirstInstall === true) onBeforeCleanInstall = null;
+
     darwinDaemonInstaller.InstallDaemonIfRequired(
+      // onBeforeCleanInstall (this callback executing only if clean installation (no daemon is installed))
+      onBeforeCleanInstall,
+      // onInstallationStarted
       () => {
         console.log("Installing daemon...");
         store.commit("daemonIsInstalling", true);
-      }, //onInstallationStarted,
+      },
+      // done (onInstallationFinished)
       exitCode => {
         // check if we still need to install helper
         darwinDaemonInstaller.IsDaemonInstallationRequired(code => {
@@ -793,10 +894,12 @@ async function connectToDaemon(
             else await connectToDaemon(true, false, doNotTryToMacosStart);
           }, 500);
         });
-      } //onInstallationFinished
+      }
     );
     return;
   }
+  // (end) MACOS ONLY: install daemon (privileged helper) if required
+  // ================================================================
 
   let setConnState = function(state) {
     setTimeout(() => store.commit("daemonConnectionState", state), 0);

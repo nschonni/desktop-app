@@ -29,11 +29,24 @@
         />
         <label class="defColor" for="wireguard">Wireguard</label>
       </div>
+
+      <div class="Description" style="margin-bottom: 4px">
+        We recommend the WireGuard protocol for its speed, security and
+        connection reliability. Currently we only support Multi-hop connections
+        using OpenVPN. For more information visit our
+        <button
+          class="link"
+          style="font-size: inherit;"
+          v-on:click="onProtocolComparisonLink"
+        >
+          protocol comparison web page
+        </button>
+      </div>
     </div>
 
     <!-- IPv6 -->
-    <div>
-      <div class="param">
+    <div class="Description flexRow">
+      <div>
         <input
           type="checkbox"
           id="enableIPv6InTunnel"
@@ -45,7 +58,7 @@
         >
       </div>
 
-      <div class="param">
+      <div style="margin-left: 14px">
         <input
           type="checkbox"
           id="showGatewaysWithoutIPv6"
@@ -174,26 +187,19 @@
       </div>
       <div v-if="openvpnManualConfig && userDefinedOvpnFile">
         <div class="description">
-          <div class="settingsGrayLongDescriptionFont">
+          <!--<div class="settingsGrayLongDescriptionFont">
             Please be aware that this is a feature for advanced users as adding
             parameters may affect the proper functioning and security of the VPN
             tunnel
-          </div>
+          </div>-->
+
           <button
-            style="margin-top: 4px"
-            class="settingsButton"
+            class="link"
+            style="max-width: 500px; margin: 0px; padding: 0px; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: inherit;"
             v-on:click="onVPNConfigFileLocation"
           >
-            Open configuration file location ...
+            {{ userDefinedOvpnFile }}
           </button>
-          <div style="max-width: 500px; margin: 0px; padding: 0px;">
-            <div
-              class="settingsGrayLongDescriptionFont selectable"
-              style=" margin-top:5px; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-            >
-              {{ userDefinedOvpnFile }}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -230,7 +236,9 @@
       </div>
 
       <div v-if="IsAccountActive">
-        <div class="settingsBoldFont">Wireguard key information:</div>
+        <div class="settingsBoldFont">
+          Wireguard key information:
+        </div>
 
         <spinner :loading="isProcessing" />
         <div class="flexRow paramBlock">
@@ -250,6 +258,13 @@
           <div class="detailedParamValue">
             {{ wgKeysGeneratedDateStr }}
           </div>
+          <button
+            class="settingsButton"
+            style="margin-left: 14px"
+            v-on:click="onWgKeyRegenerate"
+          >
+            Regenerate
+          </button>
         </div>
         <div class="flexRow paramBlockDetailedConfig">
           <div class="defColor paramName">
@@ -267,14 +282,6 @@
             {{ wgKeysWillBeRegeneratedStr }}
           </div>
         </div>
-
-        <button
-          class="settingsButton paramBlock"
-          style="margin-top: 10px; height: 24px;"
-          v-on:click="onWgKeyRegenerate"
-        >
-          Regenerate
-        </button>
       </div>
     </div>
   </div>
@@ -357,6 +364,11 @@ export default {
     formatDate: function(d) {
       if (d == null) return null;
       return dateDefaultFormat(d);
+    },
+    onProtocolComparisonLink: () => {
+      sender.shellOpenExternal(
+        `https://www.ivpn.net/pptp-vs-ipsec-ikev2-vs-openvpn-vs-wireguard/`
+      );
     }
   },
   computed: {
@@ -520,6 +532,13 @@ export default {
 div.param {
   @extend .flexRow;
   margin-top: 3px;
+}
+
+div.Description {
+  @extend .settingsGrayLongDescriptionFont;
+  margin-bottom: 17px;
+  margin-left: 22px;
+  max-width: 425px;
 }
 
 input:disabled {

@@ -5,7 +5,11 @@
     <div class="defColor" style="margin-bottom: 24px;">
       When AntiTracker is enabled, IVPN blocks ads, malicious websites, and
       third-party trackers using our private DNS servers.
-      <button class="link" v-on:click="onLearnMoreLink">
+      <button
+        class="link"
+        style="font-size: inherit;"
+        v-on:click="onLearnMoreLink"
+      >
         Learn more
       </button>
       about how IVPN AntiTracker is implemented.
@@ -26,7 +30,11 @@
     <div class="fwDescription">
       To better understand how this may impact your experience please refer to
       our
-      <button class="link" v-on:click="onHardcodeLink">
+      <button
+        class="link"
+        style="font-size: inherit;"
+        v-on:click="onHardcodeLink"
+      >
         hardcore mode FAQ</button
       >.
     </div>
@@ -82,11 +90,6 @@ div.param {
   margin-top: 3px;
 }
 
-button.link {
-  @extend .noBordersTextBtn;
-  @extend .settingsLinkText;
-  font-size: inherit;
-}
 label {
   margin-left: 1px;
   font-weight: 500;

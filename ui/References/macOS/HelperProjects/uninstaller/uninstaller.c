@@ -140,7 +140,13 @@ void get_versions(char* retInstalledVer, char* retCurrentVer, int buffersSize) {
     }
 }
 
-// returns 0 in case if helper must (and can) be installed
+// is_helper_installation_required() returns:
+//    <= 1 in case if helper must (and can) be installed
+// Ret codes:
+//        0 - helper not installed, installation required
+//        1 - another version is installed, upgrade required
+//        2 - required version of IVPN Helper is already installed. No installation needed
+//        > 2 - error
 int is_helper_installation_required() {
     // check if the helper of current version is already installed
     char installedVer[128] = {0};
@@ -148,17 +154,15 @@ int is_helper_installation_required() {
 
     get_versions(installedVer, currentVer, 128);
     if (currentVer[0]==0)
-      return 1; // Unable to install IVPN Helper. Please, copy 'IVPN.app' to '/Applications'
+      return 3;   // Unable to install IVPN Helper. Please, copy 'IVPN.app' to '/Applications'
 
-    if (installedVer[0]!=0)
-    {
-      if (strcmp(installedVer, currentVer)==0)
-        return 1; // Required version of IVPN Helper is already installed. No installation needed
+    if (installedVer[0]==0)
+      return 0;     // helper not installed. Installation required
 
-      return 0; // Another version is installed. Upgrade required
-    }
+    if (strcmp(installedVer, currentVer)!=0)
+      return 1;   // Another version is installed. Upgrade required
 
-    return 0; // helper not installed. Installation required
+    return 2; // Required version of IVPN Helper is already installed. No installation needed
 }
 
 int remove_helper_with_auth(AuthorizationRef authRef) {
@@ -534,7 +538,7 @@ int main(int argc, char **argv) {
       printf("    --start_helper\n");
       printf("    --uninstall\n");
       printf("    --update <DMG_with_update> <signature_file_of_the_DMG>\n");
-      printf("    --is_helper_installation_required (returns exit code: 0 -> helper have to be installed)\n");
+      printf("    --is_helper_installation_required (return code: 0 - installation required; 1 - upgrade required; 2 - no installation needed)\n");
       return 1;
     }
 

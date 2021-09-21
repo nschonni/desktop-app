@@ -4,24 +4,17 @@
       <div class="flexRow" style="height: 100%;">
         <div class="flexColumn" align="left">
           <div class="small_text" style="margin-top: 8px">
-            {{
-              this.isExitServer
-                ? "Exit server"
-                : isConnected
-                ? "Connected to"
-                : isConnecting
-                ? "Connecting to ..."
-                : "Connect to"
-            }}
+            {{ connectToText }}
           </div>
           <div style="min-height: 4px" />
+
           <div class="flexRow">
             <serverNameControl
               class="serverName"
               style="max-width: 245px;"
               :isLargeText="true"
-              :server="this.server"
-              :isFastestServer="isFastestServer"
+              :server="fastestServer ? fastestServer : this.server"
+              :isFastestServer="isFastestServer && !fastestServer"
               :isRandomServer="isRandomServer"
               :isShowPingPicture="!(isFastestServer || isRandomServer)"
             />
@@ -29,12 +22,6 @@
         </div>
 
         <div class="flexRow flexRowRestSpace" />
-
-        <serverPingInfoControl
-          v-show="!(isFastestServer || isRandomServer)"
-          :server="this.server"
-          style="margin-left: 9px; margin-right:8px"
-        />
 
         <div class="arrowRightSimple"></div>
       </div>
@@ -44,16 +31,35 @@
 
 <script>
 import serverNameControl from "@/components/controls/control-server-name.vue";
-import serverPingInfoControl from "@/components/controls/control-server-ping.vue";
 import { VpnStateEnum } from "@/store/types";
 
 export default {
   props: ["onShowServersPressed", "isExitServer"],
   components: {
-    serverNameControl,
-    serverPingInfoControl
+    serverNameControl
   },
   computed: {
+    connectToText: function() {
+      if (this.isConnecting && !this.isExitServer) {
+        return "Connecting to ...";
+      }
+      // Multi-Hop
+      if (this.isMultiHop === true) {
+        if (this.isExitServer) {
+          if (this.isConnected) return "Traffic is routed via exit server";
+          return "Exit server is";
+        }
+        if (this.isConnected) return "Traffic is routed via entry server";
+        return "Entry server is";
+      }
+
+      // Single-Hop
+      if (this.isFastestServer && this.fastestServer)
+        return "Fastest available server";
+
+      if (this.isConnected) return "Traffic is routed via server";
+      return "Selected server";
+    },
     server: function() {
       return this.isExitServer
         ? this.$store.state.settings.serverExit
@@ -72,19 +78,29 @@ export default {
         this.$store.state.vpnState.connectionState === VpnStateEnum.DISCONNECTED
       );
     },
+    isPingingServers: function() {
+      return this.$store.state.vpnState.isPingingServers;
+    },
     isFastestServer: function() {
       if (
-        (this.isDisconnected || this.$store.state.vpnState.isPingingServers) &&
+        this.isDisconnected /*|| this.isPingingServers*/ &&
         this.$store.getters["settings/isFastestServer"]
       )
         return true;
       return false;
+    },
+    fastestServer: function() {
+      if (!this.isFastestServer || this.isPingingServers == true) return null;
+      return this.$store.getters["vpnState/fastestServer"];
     },
     isRandomServer: function() {
       if (!this.isDisconnected) return false;
       return this.isExitServer
         ? this.$store.getters["settings/isRandomExitServer"]
         : this.$store.getters["settings/isRandomServer"];
+    },
+    isMultiHop: function() {
+      return this.$store.state.settings.isMultiHop;
     }
   },
   methods: {

@@ -345,13 +345,16 @@ export default {
     },
     onCancel: async function() {
       await sender.AppUpdatesCancelDownload();
-      await sender.UpdateWindowClose();
+      await this.doClose();
     },
     onUpgrade: async function() {
       let isCanCloseWindow = await sender.AppUpdatesUpgrade();
       if (isCanCloseWindow === true) {
-        await sender.UpdateWindowClose();
+        await this.doClose();
       }
+    },
+    doClose: async function() {
+      await sender.CloseWindow("updateWindow");
     },
     onCancelDownload: async function() {
       await sender.AppUpdatesCancelDownload();

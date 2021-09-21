@@ -139,7 +139,7 @@ CreatePackage()
   #
   # NOTE! 'remove' scripts is using from old version!
 
-  fpm -d openvpn $EXTRA_ARGS \
+  fpm -d openvpn -d wireguard-tools $EXTRA_ARGS \
     --rpm-rpmbuild-define "_build_id_links none" \
     --deb-no-default-config-files -s dir -t $PKG_TYPE -n ivpn -v $VERSION --url https://www.ivpn.net --license "GNU GPL3" \
     --template-scripts --template-value pkg=$PKG_TYPE \

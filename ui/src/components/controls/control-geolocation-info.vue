@@ -72,13 +72,16 @@
             IP Address
           </div>
 
-          <div class="flexRow" style="overflow: hidden;" >
-            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {{ ip }}
+          <div class="flexRow" style="overflow: hidden;">
+            <div
+              style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            >
+              {{ ip }}
             </div>
 
             <div style="vertical-align:top">
               <button
+                title="Click to refresh connection info"
                 class="noBordersBtn"
                 v-on:click="onRefreshCurrLocation"
                 style="padding: 0px; margin: 0px; margin-left: 4px; pointer-events: auto;"

@@ -1,23 +1,13 @@
 <template>
   <div>
-    <div>
-      <div class="horizontalLine" />
-      <div id="connection_header">
-        <div style="height: 24px;"></div>
-
-        <span class="block datails_text">
-          CONNECTION DETAILS
-        </span>
-      </div>
-      <div class="horizontalLine" />
-    </div>
+    <div class="horizontalLine" />
 
     <!-- FIREWALL -->
 
     <OnOffButtonControl
       v-bind:class="{ lowOpacity: IsPaused }"
       text="Firewall"
-      description="Ensure that all traffic is routed through VPN"
+      :description="firewallDescriptionText"
       :onChecked="firewallOnChecked"
       :isChecked="this.$store.state.vpnState.firewallState.IsEnabled"
       :checkedColor="
@@ -33,9 +23,9 @@
 
     <OnOffButtonControl
       text="AntiTracker"
-      description="Block trackers whilst connected to VPN"
+      :description="antitrackerDescriptionText"
       :onChecked="antitrackerOnChecked"
-      :isChecked="this.$store.state.settings.isAntitracker"
+      :isChecked="IsAntitracker"
       :switcherOpacity="!IsConnected ? 0.4 : 1"
       :checkedColor="
         this.$store.state.settings.isAntitrackerHardcore ? '#77152a' : null
@@ -90,12 +80,7 @@ import SelectButtonControl from "@/components/controls/control-config-to-select-
 import GeolocationInfoControl from "@/components/controls/control-geolocation-info.vue";
 const sender = window.ipcSender;
 import { enumValueName } from "@/helpers/helpers";
-import {
-  VpnTypeEnum,
-  PortTypeEnum,
-  PauseStateEnum,
-  VpnStateEnum
-} from "@/store/types";
+import { VpnTypeEnum, PortTypeEnum, PauseStateEnum } from "@/store/types";
 
 function processError(e) {
   console.error(e);
@@ -121,6 +106,37 @@ export default {
   },
 
   computed: {
+    firewallDescriptionText: function() {
+      let fwOn = this.$store.state.vpnState.firewallState.IsEnabled;
+      let fwPersistent = this.$store.state.vpnState.firewallState.IsPersistent;
+      let isAutoEnable = this.$store.state.settings.firewallActivateOnConnect;
+      let vpnOn = this.IsConnected;
+      let connecting = this.IsConnecting;
+      let disconnecting = this.IsDisconnecting;
+
+      if (fwOn === true) {
+        if (fwPersistent === true)
+          return "Always-on mode enabled. Firewall is actively blocking non-VPN traffic";
+
+        if (
+          (vpnOn === true || connecting === true || disconnecting === true) &&
+          isAutoEnable === true
+        )
+          return "On-demand mode enabled. Firewall is actively blocking non-VPN traffic";
+        return "Firewall is enabled and actively blocking non-VPN traffic";
+      }
+      // fwOn === false
+      if ((vpnOn === false || connecting === true) && isAutoEnable === true)
+        return "On-demand mode enabled. Firewall automatically enabled on connection";
+      return "Firewall disabled. Enable to block non-VPN traffic";
+    },
+    antitrackerDescriptionText: function() {
+      if (!this.IsAntitracker)
+        return "AntiTracker is disabled. Enable to block ads, trackers and malicious websites";
+      if (this.IsConnected)
+        return "AntiTracker is enabled and actively blocking ads, trackers and malicious websites";
+      return "AntiTracker will be automatically enabled when connected to VPN";
+    },
     portProtocolText: function() {
       let port = this.$store.getters["settings/getPort"];
       let protocol = this.$store.getters["settings/vpnType"];
@@ -180,9 +196,16 @@ export default {
       return this.$store.state.vpnState.pauseState == PauseStateEnum.Paused;
     },
     IsConnected: function() {
-      return (
-        this.$store.state.vpnState.connectionState === VpnStateEnum.CONNECTED
-      );
+      return this.$store.getters["vpnState/isConnected"];
+    },
+    IsConnecting: function() {
+      return this.$store.getters["vpnState/isConnecting"];
+    },
+    IsDisconnecting: function() {
+      return this.$store.getters["vpnState/isDisconnecting"];
+    },
+    IsAntitracker: function() {
+      return this.$store.state.settings.isAntitracker;
     }
   },
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="switchButton">
-      <div align="left">
+      <div align="left" style="margin-right: 8px">
         <div class="large_text">{{ text }}</div>
         <div style="height: 5px" />
         <div class="small_text">

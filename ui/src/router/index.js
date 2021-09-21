@@ -26,6 +26,7 @@ import Main from "../views/Main.vue";
 import AccountLimit from "../views/AccountLimit.vue";
 import Settings from "../views/Settings.vue";
 import Update from "../views/dialogs/Update.vue";
+import macOSDaemonInstallRequiredDlg from "../views/dialogs/macOSDeamonInstall.vue";
 
 Vue.use(VueRouter);
 
@@ -59,6 +60,11 @@ const forbiddenToChangeRouteFrom = [
     path: "/update",
     name: "Update",
     component: Update
+  },
+  {
+    path: "/macOSDaemonInstallRequiredDlg",
+    name: "macOSDaemonInstallRequiredDlg",
+    component: macOSDaemonInstallRequiredDlg
   }
 ];
 const routes = mainRoutes.concat(forbiddenToChangeRouteFrom);

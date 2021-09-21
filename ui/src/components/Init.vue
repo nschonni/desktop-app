@@ -36,7 +36,7 @@
             try to reconnect.
           </div>
           <div class="small_text">
-            The latest daemon version can be downloaded from
+            The latest versions of IVPN software can be downloaded from
             <button
               class="noBordersTextBtn settingsLinkText"
               v-on:click="visitWebsite"

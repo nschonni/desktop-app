@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="width: 38px; min-width: 38px; max-width: 38px;">
     <label class="switch" v-bind:class="{ load: isProgress }">
       <input
         type="checkbox"

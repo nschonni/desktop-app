@@ -83,7 +83,11 @@ function TryStartDaemon(done) {
   }
 }
 
-// result: onResultFunc(exitCode), where exitCode==0 when daemon have to be installed
+// result: onResultFunc(exitCode), where exitCode:
+//        0 - helper not installed, installation required
+//        1 - another version is installed, upgrade required
+//        2 - required version of IVPN Helper is already installed. No installation needed
+//        > 2 - error
 function IsDaemonInstallationRequired(onResultFunc) {
   if (Platform() !== PlatformEnum.macOS) {
     if (onResultFunc) onResultFunc(1);
@@ -114,13 +118,26 @@ function IsDaemonInstallationRequired(onResultFunc) {
   }
 }
 
-function InstallDaemonIfRequired(onInstallationStarted, done) {
+function InstallDaemonIfRequired(
+  onBeforeCleanInstall,
+  onInstallationStarted,
+  done
+) {
   if (Platform() !== PlatformEnum.macOS) return;
 
   try {
     IsDaemonInstallationRequired(code => {
-      // if exitCode == 0 - the daemon must be installed
-      if (code == 0) InstallDaemon(onInstallationStarted, done);
+      // Codes:
+      //        0 - helper not installed, installation required
+      //        1 - another version is installed, upgrade required
+      //        2 - required version of IVPN Helper is already installed. No installation needed
+      //        > 2 - error
+      if (code == 0 && onBeforeCleanInstall) {
+        onBeforeCleanInstall();
+        return;
+      }
+
+      if (code <= 1) InstallDaemon(onInstallationStarted, done);
       else if (done) done(code);
     });
   } catch (e) {

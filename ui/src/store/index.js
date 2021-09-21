@@ -54,6 +54,7 @@ export default new Vuex.Store({
     daemonVersion: "",
     daemonIsOldVersionError: false,
     daemonIsInstalling: false,
+    daemonAllowedToInstallMacOS: true,
 
     configParams: {
       UserDefinedOvpnFile: ""
@@ -202,6 +203,9 @@ export default new Vuex.Store({
     daemonIsInstalling(state, value) {
       state.daemonIsInstalling = value;
     },
+    daemonAllowedToInstallMacOS(state, value) {
+      state.daemonAllowedToInstallMacOS = value;
+    },
     latestVersionInfo(state, value) {
       state.latestVersionInfo = value;
     },
@@ -239,5 +243,9 @@ export default new Vuex.Store({
   },
 
   // can be called from renderer
-  actions: {}
+  actions: {
+    daemonAllowedToInstallMacOS(context, value) {
+      context.commit("daemonAllowedToInstallMacOS", value);
+    }
+  }
 });

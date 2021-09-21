@@ -10,10 +10,6 @@
               minimizedButtonsPanelRightElements: isWindowHasFrame
             }"
           >
-            <button v-on:click="onAccountSettings()">
-              <img src="@/assets/user.svg" />
-            </button>
-
             <button v-on:click="onSettings()">
               <img src="@/assets/settings.svg" />
             </button>
@@ -40,7 +36,6 @@
       <transition name="fade" appear>
         <Map
           :isBlured="isMapBlured"
-          :onAccountSettings="onAccountSettings"
           :onSettings="onSettings"
           :onMinimize="() => onMaximize(false)"
         />
@@ -112,11 +107,6 @@ export default {
     }
   },
   methods: {
-    onAccountSettings: function() {
-      //if (this.$store.state.settings.minimizedUI)
-      sender.ShowAccountSettings();
-      //else this.$router.push({ name: "settings", params: { view: "account" } });
-    },
     onSettings: function() {
       sender.ShowSettings();
     },

@@ -204,9 +204,6 @@ export default {
   },
 
   // UPDATES
-  UpdateWindowClose: () => {
-    return ipcRenderer.invoke("renderer-request-update-wnd-close");
-  },
   UpdateWindowResizeContent: (width, height) => {
     return ipcRenderer.invoke(
       "renderer-request-update-wnd-resize",
@@ -297,6 +294,9 @@ export default {
   },
   uiMinimize: isMinimize => {
     return invoke("renderer-request-UI-minimize", isMinimize);
+  },
+  CloseWindow: windowName => {
+    return ipcRenderer.invoke("renderer-request-wnd-close", windowName);
   },
 
   // SHELL
