@@ -133,8 +133,9 @@ export default {
     antitrackerDescriptionText: function() {
       if (!this.IsAntitracker)
         return "AntiTracker is disabled. Enable to block ads, trackers and malicious websites";
-      if (this.IsConnected)
+      if (this.IsConnected && this.IsPaused === false)
         return "AntiTracker is enabled and actively blocking ads, trackers and malicious websites";
+
       return "AntiTracker will be automatically enabled when connected to VPN";
     },
     portProtocolText: function() {
