@@ -33,7 +33,7 @@ const { nativeTheme } = require("electron");
 let tray = null;
 let menuHandlerShow = null;
 let menuHandlerPreferences = null;
-let menuHandlerAccount = null;
+//let menuHandlerAccount = null;
 let menuHandlerCheckUpdates = null;
 
 let iconConnected = null;
@@ -70,7 +70,7 @@ export function InitTray(
 ) {
   menuHandlerShow = menuItemShow;
   menuHandlerPreferences = menuItemPreferences;
-  menuHandlerAccount = menuItemAccount;
+  // menuHandlerAccount = menuItemAccount;
   menuHandlerCheckUpdates = menuItemCheckUpdates;
 
   // load icons
@@ -378,7 +378,7 @@ function updateTrayMenu() {
       submenu: favorites
     });
     mainMenu.push({ type: "separator" });
-    mainMenu.push({ label: "Account", click: menuHandlerAccount });
+    //mainMenu.push({ label: "Account", click: menuHandlerAccount });
     mainMenu.push({ label: "Settings", click: menuHandlerPreferences });
     if (menuHandlerCheckUpdates != null) {
       mainMenu.push({

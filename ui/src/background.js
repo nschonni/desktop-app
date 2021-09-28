@@ -1031,7 +1031,8 @@ function menuOnAccount() {
 }
 function menuOnPreferences() {
   menuOnShow();
-  showSettings("general");
+  //showSettings("general");
+  showSettings("account");
 }
 
 // UPDATE

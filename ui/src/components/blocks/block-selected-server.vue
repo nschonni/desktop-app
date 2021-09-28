@@ -31,7 +31,7 @@
 
 <script>
 import serverNameControl from "@/components/controls/control-server-name.vue";
-import { VpnStateEnum } from "@/store/types";
+import { VpnStateEnum, PauseStateEnum } from "@/store/types";
 
 export default {
   props: ["onShowServersPressed", "isExitServer"],
@@ -54,10 +54,16 @@ export default {
       }
 
       // Single-Hop
-      if (this.isFastestServer && this.fastestServer)
+      if (this.isConnected && !this.isPaused)
+        return "Traffic is routed via server";
+
+      if (
+        (this.$store.getters["settings/isFastestServer"] &&
+          this.fastestServer) ||
+        this.$store.getters["vpnState/isDisconnecting"]
+      )
         return "Fastest available server";
 
-      if (this.isConnected) return "Traffic is routed via server";
       return "Selected server";
     },
     server: function() {
@@ -88,6 +94,9 @@ export default {
       )
         return true;
       return false;
+    },
+    isPaused: function() {
+      return this.$store.state.vpnState.pauseState == PauseStateEnum.Paused;
     },
     fastestServer: function() {
       if (!this.isFastestServer || this.isPingingServers == true) return null;

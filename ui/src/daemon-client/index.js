@@ -316,6 +316,15 @@ async function processResponse(response) {
 
     case daemonResponses.VpnStateResp:
       if (obj.StateVal == null) break;
+
+      // If we are in DISCONNECTING state already - necessary to wait DisconnectedResp: ignore VpnStateResp with value DISCONNECTED.
+      // This needs just to avoid unwanted UI flickering (e.g. multiple changes of label texts)
+      if (
+        obj.StateVal === VpnStateEnum.DISCONNECTED &&
+        store.state.vpnState.connectionState === VpnStateEnum.DISCONNECTING
+      )
+        break;
+
       store.commit("vpnState/connectionState", obj.StateVal);
       break;
 

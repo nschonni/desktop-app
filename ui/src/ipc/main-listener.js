@@ -238,12 +238,15 @@ ipcMain.handle("renderer-request-ui-color-scheme-set", (event, theme) => {
 
 // DIALOG
 ipcMain.on("renderer-request-showmsgboxsync", (event, diagConfig) => {
+  if (!diagConfig.title) diagConfig.title = "IVPN";
   event.returnValue = dialog.showMessageBoxSync(
     event.sender.getOwnerBrowserWindow(),
     diagConfig
   );
 });
+
 ipcMain.handle("renderer-request-showmsgbox", async (event, diagConfig) => {
+  if (!diagConfig.title) diagConfig.title = "IVPN";
   return await dialog.showMessageBox(
     event.sender.getOwnerBrowserWindow(),
     diagConfig
