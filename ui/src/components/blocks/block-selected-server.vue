@@ -46,10 +46,12 @@ export default {
       // Multi-Hop
       if (this.isMultiHop === true) {
         if (this.isExitServer) {
-          if (this.isConnected) return "Traffic is routed via exit server";
+          if (this.isConnected && !this.isPaused)
+            return "Traffic is routed via exit server";
           return "Exit server is";
         }
-        if (this.isConnected) return "Traffic is routed via entry server";
+        if (this.isConnected && !this.isPaused)
+          return "Traffic is routed via entry server";
         return "Entry server is";
       }
 
