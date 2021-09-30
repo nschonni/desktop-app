@@ -270,10 +270,19 @@ ipcMain.handle("renderer-request-showOpenDialog", async (event, options) => {
 ipcMain.handle("renderer-request-UI-minimize", async (event, isMinimize) => {
   let win = event.sender.getOwnerBrowserWindow();
   if (win == null) return null;
+
+  let w = config.MaximizedUIWidth;
+  if (isMinimize) w = config.MinimizedUIWidth;
+
+  const maxs = win.getMaximumSize();
+  const mins = win.getMinimumSize();
+  if (maxs[0] == mins[0] && maxs[1] == mins[1]) {
+    await win.setMaximumSize(w, maxs[1]);
+    await win.setMinimumSize(w, maxs[1]);
+  }
+
   const animate = false;
-  if (isMinimize)
-    return await win.setBounds({ width: config.MinimizedUIWidth }, animate);
-  else return await win.setBounds({ width: config.MaximizedUIWidth }, animate);
+  await win.setBounds({ width: w }, animate);
 });
 ipcMain.handle("renderer-request-close-current-window", async event => {
   return await event.sender.getOwnerBrowserWindow().close();
