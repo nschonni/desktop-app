@@ -487,23 +487,6 @@ function getWindowIcon() {
 }
 
 function createBrowserWindow(config) {
-  if (config.resizable === false) {
-    // INFO: The hack here.
-    // For Electron versions since v13.5.x, v14.x.x, v15.x.x
-    // the "-webkit-app-region: no-drag;" option does not work when config.resizable == false.
-    // Here we trying to fix it. Set resizable = true but define min/max values.
-    // TODO: check this behavior in newest versions
-    if (config.height && config.width) {
-      config.minHeight = config.height;
-      config.maxHeight = config.height;
-
-      config.minWidth = config.width;
-      config.maxWidth = config.width;
-
-      config.resizable = true;
-    }
-  }
-
   config.webPreferences = {
     preload: path.join(__dirname, "preload.js"),
 
