@@ -45,7 +45,7 @@ import store from "@/store";
 const PingServersTimeoutMs = 4000;
 const PingServersRetriesCnt = 4;
 
-const DefaultResponseTimeoutMs = 15 * 1000;
+const DefaultResponseTimeoutMs = 3 * 60 * 1000;
 
 // Socket to connect to a daemon
 let socket = new net.Socket();
@@ -217,6 +217,12 @@ function sendRecv(request, waitRespCommandsList, timeoutMs) {
     waitForCommandsList: waitRespCommandsList
   };
 
+  if (socket == null) {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Error: Daemon is not connected"));
+    });
+  }
+
   let promise = addWaiter(waiter, timeoutMs);
 
   // send data
@@ -224,17 +230,7 @@ function sendRecv(request, waitRespCommandsList, timeoutMs) {
 
   return promise;
 }
-function commitNoSession() {
-  const session = {
-    AccountID: "",
-    Session: "",
-    WgPublicKey: "",
-    WgLocalIP: "",
-    WgKeyGenerated: new Date(),
-    WgKeysRegenIntervalSec: 0
-  };
-  commitSession(session);
-}
+
 function commitSession(sessionRespObj) {
   if (sessionRespObj == null) return;
   const session = {
@@ -261,6 +257,11 @@ function requestGeoLookupAsync() {
   }, 0);
 }
 
+function doResetSettings() {
+  // Necessary to initialize selected VPN servers
+  store.dispatch("settings/resetToDefaults");
+}
+
 async function processResponse(response) {
   const obj = JSON.parse(response);
 
@@ -276,6 +277,18 @@ async function processResponse(response) {
   switch (obj.Command) {
     case daemonResponses.HelloResp:
       store.commit("daemonVersion", obj.Version);
+
+      if (obj.SettingsSessionUUID) {
+        const ssID = obj.SettingsSessionUUID;
+        // SettingsSessionUUID allows to detect situations when settings was erased
+        // This value should be the same as on daemon side. If it differs - current settings should be erased to default state
+        if (ssID != store.state.settings.SettingsSessionUUID) {
+          // UUID not equal to the UUID received from daemon: reset settings
+          if (store.state.settings.SettingsSessionUUID) doResetSettings();
+          // save new UUID received from daemon
+          store.commit("settings/settingsSessionUUID", ssID);
+        }
+      }
 
       // Check minimal required daemon version
       if (IsNewVersion(obj.Version, config.MinRequiredDaemonVer)) {
@@ -629,11 +642,15 @@ async function ConnectToDaemon(setConnState, onDaemonExitingCallback) {
       // Save 'disconnected' state
       setConnState(DaemonConnectionType.NotConnected);
       log.debug("Connection closed");
+
+      socket = null;
     });
 
     socket.on("error", e => {
       log.error(`Connection error: ${e}`);
       reject(e);
+
+      socket = null;
     });
 
     log.debug("Connecting to daemon...");
@@ -646,18 +663,14 @@ async function ConnectToDaemon(setConnState, onDaemonExitingCallback) {
 }
 
 async function Login(accountID, force, captchaID, captcha, confirmation2FA) {
-  let resp = await sendRecv(
-    {
-      Command: daemonRequests.SessionNew,
-      AccountID: accountID,
-      ForceLogin: force,
-      CaptchaID: captchaID,
-      Captcha: captcha,
-      Confirmation2FA: confirmation2FA
-    },
-    null,
-    30000
-  );
+  let resp = await sendRecv({
+    Command: daemonRequests.SessionNew,
+    AccountID: accountID,
+    ForceLogin: force,
+    CaptchaID: captchaID,
+    Captcha: captcha,
+    Confirmation2FA: confirmation2FA
+  });
 
   if (resp.APIStatus === API_SUCCESS) commitSession(resp.Session);
 
@@ -666,23 +679,23 @@ async function Login(accountID, force, captchaID, captcha, confirmation2FA) {
   return resp;
 }
 
-async function Logout() {
-  store.commit("settings/isExpectedAccountToBeLoggedIn", false);
-  await KillSwitchSetIsPersistent(false);
-  await EnableFirewall(false);
-  await Disconnect();
-  try {
-    await sendRecv({
-      Command: daemonRequests.SessionDelete
-    });
-  } catch (e) {
-    console.error(e);
-  }
+async function Logout(
+  needToResetSettings,
+  needToDisableFirewall,
+  isCanDeleteSessionLocally
+) {
+  await sendRecv({
+    Command: daemonRequests.SessionDelete,
+    NeedToResetSettings: needToResetSettings,
+    NeedToDisableFirewall: needToDisableFirewall,
+    IsCanDeleteSessionLocally: isCanDeleteSessionLocally
+  });
 
-  // It can happen that there will be no CONNECTION TO API or error on backend side
-  // In this case the daemon will not logout.
-  // Here we manually removing local session info
-  commitNoSession();
+  store.commit("settings/isExpectedAccountToBeLoggedIn", false);
+
+  if (needToResetSettings === true) {
+    doResetSettings();
+  }
 }
 
 async function AccountStatus() {

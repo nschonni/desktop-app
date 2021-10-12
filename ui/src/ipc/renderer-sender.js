@@ -105,8 +105,17 @@ export default {
       confirmation2FA
     );
   },
-  Logout: async () => {
-    return await invoke("renderer-request-logout");
+  Logout: async (
+    needToResetSettings,
+    needToDisableFirewall,
+    isCanDeleteSessionLocally
+  ) => {
+    return await invoke(
+      "renderer-request-logout",
+      needToResetSettings,
+      needToDisableFirewall,
+      isCanDeleteSessionLocally
+    );
   },
   AccountStatus: async () => {
     return await invoke("renderer-request-account-status");
@@ -271,8 +280,12 @@ export default {
   showMessageBoxSync: diagConfig => {
     return ipcRenderer.sendSync("renderer-request-showmsgboxsync", diagConfig);
   },
-  showMessageBox: diagConfig => {
-    return invoke("renderer-request-showmsgbox", diagConfig);
+  showMessageBox: (diagConfig, doNotAttachToWindow) => {
+    return invoke(
+      "renderer-request-showmsgbox",
+      diagConfig,
+      doNotAttachToWindow
+    );
   },
 
   showOpenDialogSync: options => {

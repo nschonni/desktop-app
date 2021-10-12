@@ -159,27 +159,97 @@ export default {
   },
   methods: {
     async logOut() {
-      if (
-        sender.showMessageBoxSync({
-          type: "question",
-          message: "Do you really want to log out?",
-          buttons: ["Log out", "Cancel"]
-        }) != 0
-      )
-        return;
+      // check: is it is necessary to warn user about enabled firewall?
+      let isNeedPromptFirewallStatus = false;
+      if (this.$store.state.vpnState.firewallState.IsEnabled == true) {
+        isNeedPromptFirewallStatus = true;
+        if (
+          this.$store.state.vpnState.firewallState.IsPersistent === false &&
+          this.$store.state.settings.firewallDeactivateOnDisconnect === true &&
+          this.$store.getters["vpnState/isDisconnected"] === false
+        ) {
+          isNeedPromptFirewallStatus = false;
+        }
+      }
 
+      // show dialog ("confirm to logout")
+      let needToDisableFirewall = true;
+      let needToResetSettings = false;
+      const mes = "Do you really want to log out IVPN account?";
+      const mesResetSettings = "Reset application settings to defaults";
+
+      if (isNeedPromptFirewallStatus == true) {
+        // LOGOUT message: Firewall is enabled
+        let ret = await sender.showMessageBox(
+          {
+            type: "question",
+            message: mes,
+            detail:
+              "The Firewall is enabled. All network access will be blocked.",
+            checkboxLabel: mesResetSettings,
+            buttons: ["Turn Firewall off and log out", "Log out", "Cancel"]
+          },
+          true
+        );
+        if (ret.response == 2) return; // cancel
+        if (ret.response != 0) needToDisableFirewall = false;
+        needToResetSettings = ret.checkboxChecked;
+      } else {
+        // LOGOUT message: Firewall is disabled
+        let ret = await sender.showMessageBox(
+          {
+            type: "question",
+            message: mes,
+            checkboxLabel: mesResetSettings,
+            buttons: ["Log out", "Cancel"]
+          },
+          true
+        );
+        if (ret.response == 1) return; // cancel
+        needToResetSettings = ret.checkboxChecked;
+      }
+
+      // LOGOUT
       try {
         this.isProcessing = true;
-        await sender.Logout();
+
+        const isCanDeleteSessionLocally = false;
+        await sender.Logout(
+          needToResetSettings,
+          needToDisableFirewall,
+          isCanDeleteSessionLocally
+        );
       } catch (e) {
         this.isProcessing = false;
         console.error(e);
-        sender.showMessageBoxSync({
-          type: "error",
-          message: "Failed to log out.",
-          detail: e,
-          buttons: ["OK"]
-        });
+
+        try {
+          let ret = sender.showMessageBoxSync({
+            type: "error",
+            message:
+              "Unable to contact server to log out. Please check Internet connectivity.\nDo you want to force log out?",
+            detail:
+              "This device will continue to count towards your device limit.",
+            buttons: ["Force log out", "Cancel"]
+          });
+          if (ret == 1) return; // Cancel
+
+          this.isProcessing = true;
+          // FORCE LOGOUT
+          const isCanDeleteSessionLocally = true;
+          await sender.Logout(
+            needToResetSettings,
+            needToDisableFirewall,
+            isCanDeleteSessionLocally
+          );
+        } catch (e) {
+          sender.showMessageBoxSync({
+            type: "error",
+            message: "Failed to log out.",
+            detail: e,
+            buttons: ["OK"]
+          });
+        }
       } finally {
         this.isProcessing = false;
       }
